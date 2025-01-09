@@ -193,17 +193,14 @@ public class WandListener implements Listener {
     private void logUndoAction(Player player, List<Block> blocks, FileConfiguration config, File file) {
         String playerName = player.getName();
         String path = playerName + "." + System.currentTimeMillis();
-        config.set(path + ".world", blocks.get(0).getWorld().getName());
-        for (int i = 0; i < blocks.size(); i++) {
-            Block block = blocks.get(i);
-            Location loc = block.getLocation();
-            String blockPath = path + ".blocks." + i;
-            config.set(blockPath + ".x", loc.getX());
-            config.set(blockPath + ".y", loc.getY());
-            config.set(blockPath + ".z", loc.getZ());
-            config.set(blockPath + ".fromType", block.getType().toString());
-            config.set(blockPath + ".toType", Material.AIR.toString());
-        }
+        Block initialBlock = blocks.get(0);
+        Location loc = initialBlock.getLocation();
+        config.set(path + ".world", loc.getWorld().getName());
+        config.set(path + ".x", loc.getX());
+        config.set(path + ".y", loc.getY());
+        config.set(path + ".z", loc.getZ());
+        config.set(path + ".fromType", initialBlock.getType().toString());
+        config.set(path + ".toType", Material.AIR.toString());
         try {
             config.save(file);
         } catch (IOException e) {
