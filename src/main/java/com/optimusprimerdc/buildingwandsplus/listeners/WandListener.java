@@ -2,22 +2,23 @@ package com.optimusprimerdc.buildingwandsplus.listeners;
 
 import com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.Location;
+import org.bukkit.inventory.ItemStack;
 
-
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,10 +29,18 @@ public class WandListener implements Listener {
     private final BuildingWandsPlus plugin;
     private int maxBlockLimit;
     private final Map<UUID, LinkedList<List<Block>>> playerBlockHistory = new HashMap<>();
+    private final File playerHistoryFile;
+    private final File undoHistoryFile;
+    private final FileConfiguration playerHistoryConfig;
+    private final FileConfiguration undoHistoryConfig;
 
     public WandListener(BuildingWandsPlus plugin) {
         this.plugin = plugin;
         reloadConfig();
+        playerHistoryFile = new File(plugin.getDataFolder(), "playerhistory.yml");
+        undoHistoryFile = new File(plugin.getDataFolder(), "undohistory.yml");
+        playerHistoryConfig = YamlConfiguration.loadConfiguration(playerHistoryFile);
+        undoHistoryConfig = YamlConfiguration.loadConfiguration(undoHistoryFile);
     }
 
     public void reloadConfig() {
@@ -98,6 +107,7 @@ public class WandListener implements Listener {
             if (!placedBlocks.isEmpty()) {
                 playerBlockHistory.computeIfAbsent(player.getUniqueId(), k -> new LinkedList<>()).addFirst(placedBlocks);
                 plugin.getLogger().info("Blocks placed by player " + player.getName() + ": " + placedBlocks.size());
+                logPlayerAction(player, placedBlocks, playerHistoryConfig, playerHistoryFile);
             }
         }
     }
@@ -122,6 +132,7 @@ public class WandListener implements Listener {
         if (history != null && !history.isEmpty()) {
             List<Block> placedBlocks = history.removeFirst();
             for (Block block : placedBlocks) {
+                logUndoAction(player, block, block.getType(), Material.AIR, undoHistoryConfig, undoHistoryFile);
                 block.setType(Material.AIR);
             }
             player.sendMessage("§6§lBuilding Wands: Last operation undone!");
@@ -137,6 +148,58 @@ public class WandListener implements Listener {
         playerBlockHistory.remove(event.getPlayer().getUniqueId());
     }
 
+    /**
+     * Log player actions to a YAML file.
+     *
+     * @param player The player
+     * @param blocks The list of blocks involved in the action
+     * @param config The YAML configuration to update
+     * @param file   The file to save the configuration to
+     */
+    private void logPlayerAction(Player player, List<Block> blocks, FileConfiguration config, File file) {
+        String playerName = player.getName();
+        for (Block block : blocks) {
+            Location loc = block.getLocation();
+            String path = playerName + "." + System.currentTimeMillis();
+            config.set(path + ".world", loc.getWorld().getName());
+            config.set(path + ".x", loc.getX());
+            config.set(path + ".y", loc.getY());
+            config.set(path + ".z", loc.getZ());
+            config.set(path + ".type", block.getType().toString());
+        }
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not save " + file.getName() + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Log undo actions to a YAML file.
+     *
+     * @param player The player
+     * @param block The block involved in the action
+     * @param fromType The original block type
+     * @param toType The new block type
+     * @param config The YAML configuration to update
+     * @param file The file to save the configuration to
+     */
+    private void logUndoAction(Player player, Block block, Material fromType, Material toType, FileConfiguration config, File file) {
+        String playerName = player.getName();
+        Location loc = block.getLocation();
+        String path = playerName + "." + System.currentTimeMillis();
+        config.set(path + ".world", loc.getWorld().getName());
+        config.set(path + ".x", loc.getX());
+        config.set(path + ".y", loc.getY());
+        config.set(path + ".z", loc.getZ());
+        config.set(path + ".fromType", fromType.toString());
+        config.set(path + ".toType", toType.toString());
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not save " + file.getName() + ": " + e.getMessage());
+        }
+    }
 
     /**
      * Check if the player's bounding box intersects or is adjacent to the target block.
@@ -167,4 +230,4 @@ public class WandListener implements Listener {
                playerMaxY > blockMinY && playerMinY < blockMaxY &&
                playerMaxZ > blockMinZ && playerMinZ < blockMaxZ;
     }
-}    
+}
