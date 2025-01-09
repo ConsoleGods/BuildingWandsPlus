@@ -138,6 +138,9 @@ public class WandListener implements Listener {
             List<Block> placedBlocks = history.removeFirst();
             logUndoAction(player, placedBlocks, undoHistoryConfig, undoHistoryFile);
             for (Block block : placedBlocks) {
+                if (player.getGameMode() == GameMode.SURVIVAL) {
+                    player.getInventory().addItem(new ItemStack(block.getType(), 1));
+                }
                 block.setType(Material.AIR);
             }
             player.sendMessage("§6§lBuilding Wands: Last operation undone!");
@@ -190,14 +193,16 @@ public class WandListener implements Listener {
     private void logUndoAction(Player player, List<Block> blocks, FileConfiguration config, File file) {
         String playerName = player.getName();
         String path = playerName + "." + System.currentTimeMillis();
-        for (Block block : blocks) {
+        config.set(path + ".world", blocks.get(0).getWorld().getName());
+        for (int i = 0; i < blocks.size(); i++) {
+            Block block = blocks.get(i);
             Location loc = block.getLocation();
-            config.set(path + ".world", loc.getWorld().getName());
-            config.set(path + ".x", loc.getX());
-            config.set(path + ".y", loc.getY());
-            config.set(path + ".z", loc.getZ());
-            config.set(path + ".fromType", block.getType().toString());
-            config.set(path + ".toType", Material.AIR.toString());
+            String blockPath = path + ".blocks." + i;
+            config.set(blockPath + ".x", loc.getX());
+            config.set(blockPath + ".y", loc.getY());
+            config.set(blockPath + ".z", loc.getZ());
+            config.set(blockPath + ".fromType", block.getType().toString());
+            config.set(blockPath + ".toType", Material.AIR.toString());
         }
         try {
             config.save(file);
