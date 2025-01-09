@@ -1,0 +1,4 @@
+com/optimusprimerdc/buildingwandsplus/commands/WandCommand.class
+com/optimusprimerdc/buildingwandsplus/commands/ReloadCommand.class
+com/optimusprimerdc/buildingwandsplus/BuildingWandsPlus.class
+com/optimusprimerdc/buildingwandsplus/listeners/WandListener.class

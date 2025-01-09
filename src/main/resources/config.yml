@@ -1,4 +1,2 @@
-wand:
-  material: STICK
-  max-range: 10
+wand-item: STICK
 max-block-limit: 64

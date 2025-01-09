@@ -24,14 +24,7 @@ public class WandCommand implements CommandExecutor {
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
             Player target = Bukkit.getPlayer(args[1]);
             if (target != null) {
-                String materialName = plugin.getConfig().getString("wand.material", "STICK");
-                Material wandMaterial = Material.matchMaterial(materialName);
-                if (wandMaterial == null) {
-                    sender.sendMessage("Invalid material type in config: " + materialName);
-                    return false;
-                }
-
-                ItemStack wand = new ItemStack(wandMaterial); // Wand item from config
+                ItemStack wand = new ItemStack(Material.STICK); // Example wand item
                 ItemMeta meta = wand.getItemMeta();
                 if (meta != null) {
                     meta.setDisplayName("§6§lBuilding Wand");

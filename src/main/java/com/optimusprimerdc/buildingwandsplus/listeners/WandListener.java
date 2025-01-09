@@ -2,26 +2,22 @@ package com.optimusprimerdc.buildingwandsplus.listeners;
 
 import com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.BlockData;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.util.Vector;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.Location;
 
-import java.io.File;
-import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,36 +25,18 @@ import java.util.Map;
 import java.util.UUID;
 
 public class WandListener implements Listener {
-
     private final BuildingWandsPlus plugin;
     private int maxBlockLimit;
-    private int maxRange;
-    private Material wandMaterial;
     private final Map<UUID, LinkedList<List<Block>>> playerBlockHistory = new HashMap<>();
-    private final File playerHistoryFile;
-    private final File undoHistoryFile;
-    private final FileConfiguration playerHistoryConfig;
-    private final FileConfiguration undoHistoryConfig;
 
     public WandListener(BuildingWandsPlus plugin) {
         this.plugin = plugin;
         reloadConfig();
-        playerHistoryFile = new File(plugin.getDataFolder(), "playerhistory.yml");
-        undoHistoryFile = new File(plugin.getDataFolder(), "undohistory.yml");
-        playerHistoryConfig = YamlConfiguration.loadConfiguration(playerHistoryFile);
-        undoHistoryConfig = YamlConfiguration.loadConfiguration(undoHistoryFile);
     }
 
     public void reloadConfig() {
         FileConfiguration config = plugin.getConfig();
         this.maxBlockLimit = config.getInt("max-block-limit", 64);
-        this.maxRange = config.getInt("wand.max-range", 10);
-        String materialName = config.getString("wand.material", "STICK");
-        this.wandMaterial = Material.matchMaterial(materialName);
-        if (this.wandMaterial == null) {
-            this.wandMaterial = Material.STICK; // Default to STICK if the material is invalid
-            plugin.getLogger().warning("Invalid wand material in config: " + materialName + ". Defaulting to STICK.");
-        }
     }
 
     @EventHandler
@@ -66,22 +44,11 @@ public class WandListener implements Listener {
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
 
-        if (item != null && item.getType() == wandMaterial) {
-            ItemMeta meta = item.getItemMeta();
-            if (meta != null && meta.hasDisplayName() && meta.getDisplayName().equals("§6§lBuilding Wand")) {
-                if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                    Block clickedBlock = event.getClickedBlock();
-                    if (clickedBlock != null) {
-                        double distance = player.getEyeLocation().distance(clickedBlock.getLocation());
-                        if (distance <= maxRange) {
-                            handleBlockPlacement(event, player, item);
-                        } else {
-                            player.sendMessage("§cYou are too far away to use the wand on this block.");
-                        }
-                    }
-                } else if (event.getAction() == Action.LEFT_CLICK_BLOCK && player.isSneaking()) {
-                    handleUndoOperation(player);
-                }
+        if (item != null && item.getType() == Material.STICK) { // Example wand item
+            if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+                handleBlockPlacement(event, player, item);
+            } else if (event.getAction() == Action.LEFT_CLICK_BLOCK && player.isSneaking()) {
+                handleUndoOperation(player);
             }
         }
     }
@@ -90,31 +57,27 @@ public class WandListener implements Listener {
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock != null) {
             Material blockType = clickedBlock.getType();
-            BlockData blockData = clickedBlock.getBlockData(); // Using BlockData
-
-            // Get the direction the player is looking
-            Vector direction = player.getLocation().getDirection().normalize(); // Normalize to ensure consistent movement
-
+            BlockData blockData = clickedBlock.getBlockData();
+            BlockFace face = event.getBlockFace(); // Get the clicked face
+    
             int length = Math.min(maxBlockLimit, 64); // Ensure the length does not exceed the max limit
-
-            // Build in the direction of the player's looking direction
+    
+            // Build in the direction of the clicked face
+            Block targetBlock = clickedBlock;
             List<Block> placedBlocks = new LinkedList<>();
             for (int i = 0; i < length; i++) {
-                // Calculate new position in the direction the player is looking
-                Location newLocation = clickedBlock.getLocation().add(direction.multiply(i));
-                Block targetBlock = newLocation.getBlock();
-
+                targetBlock = targetBlock.getRelative(face); // Place in the direction of the clicked face
+    
                 if (!targetBlock.getType().isAir()) {
                     // Stop building if a block is already there
                     break;
                 }
-
-                // Check if the block placement is directly towards the player
+    
+                // ** Check if the block placement is directly towards the player **
                 if (isPlayerTooClose(player, targetBlock)) {
-                    player.sendMessage("§cYou cannot place blocks towards yourself!");
                     break;
                 }
-
+    
                 // Place block based on game mode
                 if (player.getGameMode() == GameMode.CREATIVE) {
                     targetBlock.setType(blockType);
@@ -135,9 +98,23 @@ public class WandListener implements Listener {
             if (!placedBlocks.isEmpty()) {
                 playerBlockHistory.computeIfAbsent(player.getUniqueId(), k -> new LinkedList<>()).addFirst(placedBlocks);
                 plugin.getLogger().info("Blocks placed by player " + player.getName() + ": " + placedBlocks.size());
-                logPlayerAction(player, placedBlocks, playerHistoryConfig, playerHistoryFile);
             }
         }
+    }
+    
+    /**
+     * Check if the block being placed is too close to the player.
+     *
+     * @param player      The player
+     * @param targetBlock The block being placed
+     * @return True if the target block is too close to the player, false otherwise
+     */
+    private boolean isPlayerTooClose(Player player, Block targetBlock) {
+        Location playerLocation = player.getLocation();
+        Location blockLocation = targetBlock.getLocation();
+    
+        // Check distance between player's position and block
+        return blockLocation.distance(playerLocation) < 1.5; // Adjust distance as needed
     }
 
     public void handleUndoOperation(Player player) {
@@ -149,7 +126,6 @@ public class WandListener implements Listener {
             }
             player.sendMessage("§6§lBuilding Wands: Last operation undone!");
             plugin.getLogger().info("Undo operation performed by player " + player.getName());
-            logPlayerAction(player, placedBlocks, undoHistoryConfig, undoHistoryFile);
         } else {
             player.sendMessage("§6§lBuilding Wands: No operation to undo!");
             plugin.getLogger().info("No operation to undo for player " + player.getName());
@@ -161,44 +137,34 @@ public class WandListener implements Listener {
         playerBlockHistory.remove(event.getPlayer().getUniqueId());
     }
 
+
     /**
-     * Check if the block being placed is too close to the player.
+     * Check if the player's bounding box intersects or is adjacent to the target block.
      *
      * @param player      The player
      * @param targetBlock The block being placed
-     * @return True if the target block is too close to the player, false otherwise
+     * @return True if the target block obstructs the player, false otherwise
      */
-    private boolean isPlayerTooClose(Player player, Block targetBlock) {
-        Location blockCenter = targetBlock.getLocation().add(0.5, 0.5, 0.5); // Center of the block
-        Location playerLocation = player.getLocation();
-
-        // Check if the player's distance from the block is less than 1.5 blocks
-        return blockCenter.distance(playerLocation) < 1.5;
+    private boolean isPlayerObstructed(Player player, Block targetBlock) {
+        // Player's bounding box
+        double playerMinX = player.getLocation().getX() - 0.3;
+        double playerMaxX = player.getLocation().getX() + 0.3;
+        double playerMinY = player.getLocation().getY();
+        double playerMaxY = player.getLocation().getY() + 1.8; // Height of a player
+        double playerMinZ = player.getLocation().getZ() - 0.3;
+        double playerMaxZ = player.getLocation().getZ() + 0.3;
+    
+        // Target block's bounding box
+        double blockMinX = targetBlock.getX();
+        double blockMaxX = targetBlock.getX() + 1;
+        double blockMinY = targetBlock.getY();
+        double blockMaxY = targetBlock.getY() + 1;
+        double blockMinZ = targetBlock.getZ();
+        double blockMaxZ = targetBlock.getZ() + 1;
+    
+        // Check if the player's bounding box intersects with the target block's bounding box
+        return playerMaxX > blockMinX && playerMinX < blockMaxX &&
+               playerMaxY > blockMinY && playerMinY < blockMaxY &&
+               playerMaxZ > blockMinZ && playerMinZ < blockMaxZ;
     }
-
-    /**
-     * Log player actions to a YAML file.
-     *
-     * @param player The player
-     * @param blocks The list of blocks involved in the action
-     * @param config The YAML configuration to update
-     * @param file   The file to save the configuration to
-     */
-    private void logPlayerAction(Player player, List<Block> blocks, FileConfiguration config, File file) {
-        String playerName = player.getName();
-        for (Block block : blocks) {
-            Location loc = block.getLocation();
-            String path = playerName + "." + System.currentTimeMillis();
-            config.set(path + ".world", loc.getWorld().getName());
-            config.set(path + ".x", loc.getX());
-            config.set(path + ".y", loc.getY());
-            config.set(path + ".z", loc.getZ());
-            config.set(path + ".type", block.getType().toString());
-        }
-        try {
-            config.save(file);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Could not save " + file.getName() + ": " + e.getMessage());
-        }
-    }
-}
+}    
