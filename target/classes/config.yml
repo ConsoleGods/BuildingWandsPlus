@@ -1,0 +1,4 @@
+wand:
+  material: STICK
+  max-range: 10
+max-block-limit: 64
