@@ -24,7 +24,11 @@ public class WandCommand implements CommandExecutor {
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
             Player target = Bukkit.getPlayer(args[1]);
             if (target != null) {
-                ItemStack wand = new ItemStack(Material.STICK); // Example wand item
+                Material wandMaterial = Material.getMaterial(plugin.getConfig().getString("wand-item", "STICK").toUpperCase());
+                if (wandMaterial == null) {
+                    wandMaterial = Material.STICK; // Default to STICK if the config value is invalid
+                }
+                ItemStack wand = new ItemStack(wandMaterial);
                 ItemMeta meta = wand.getItemMeta();
                 if (meta != null) {
                     meta.setDisplayName("§6§lBuilding Wand");

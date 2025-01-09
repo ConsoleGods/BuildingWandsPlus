@@ -28,6 +28,7 @@ import java.util.UUID;
 public class WandListener implements Listener {
     private final BuildingWandsPlus plugin;
     private int maxBlockLimit;
+    private Material wandItem;
     private final Map<UUID, LinkedList<List<Block>>> playerBlockHistory = new HashMap<>();
     private final File playerHistoryFile;
     private final File undoHistoryFile;
@@ -46,6 +47,10 @@ public class WandListener implements Listener {
     public void reloadConfig() {
         FileConfiguration config = plugin.getConfig();
         this.maxBlockLimit = config.getInt("max-block-limit", 64);
+        this.wandItem = Material.getMaterial(config.getString("wand-item", "STICK").toUpperCase());
+        if (this.wandItem == null) {
+            this.wandItem = Material.STICK; // Default to STICK if the config value is invalid
+        }
     }
 
     @EventHandler
@@ -53,7 +58,7 @@ public class WandListener implements Listener {
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
 
-        if (item != null && item.getType() == Material.STICK) { // Example wand item
+        if (item != null && item.getType() == wandItem) {
             if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 handleBlockPlacement(event, player, item);
             } else if (event.getAction() == Action.LEFT_CLICK_BLOCK && player.isSneaking()) {
@@ -131,8 +136,8 @@ public class WandListener implements Listener {
         LinkedList<List<Block>> history = playerBlockHistory.get(player.getUniqueId());
         if (history != null && !history.isEmpty()) {
             List<Block> placedBlocks = history.removeFirst();
+            logUndoAction(player, placedBlocks, undoHistoryConfig, undoHistoryFile);
             for (Block block : placedBlocks) {
-                logUndoAction(player, block, block.getType(), Material.AIR, undoHistoryConfig, undoHistoryFile);
                 block.setType(Material.AIR);
             }
             player.sendMessage("§6§lBuilding Wands: Last operation undone!");
@@ -178,22 +183,22 @@ public class WandListener implements Listener {
      * Log undo actions to a YAML file.
      *
      * @param player The player
-     * @param block The block involved in the action
-     * @param fromType The original block type
-     * @param toType The new block type
+     * @param blocks The list of blocks involved in the undo action
      * @param config The YAML configuration to update
      * @param file The file to save the configuration to
      */
-    private void logUndoAction(Player player, Block block, Material fromType, Material toType, FileConfiguration config, File file) {
+    private void logUndoAction(Player player, List<Block> blocks, FileConfiguration config, File file) {
         String playerName = player.getName();
-        Location loc = block.getLocation();
         String path = playerName + "." + System.currentTimeMillis();
-        config.set(path + ".world", loc.getWorld().getName());
-        config.set(path + ".x", loc.getX());
-        config.set(path + ".y", loc.getY());
-        config.set(path + ".z", loc.getZ());
-        config.set(path + ".fromType", fromType.toString());
-        config.set(path + ".toType", toType.toString());
+        for (Block block : blocks) {
+            Location loc = block.getLocation();
+            config.set(path + ".world", loc.getWorld().getName());
+            config.set(path + ".x", loc.getX());
+            config.set(path + ".y", loc.getY());
+            config.set(path + ".z", loc.getZ());
+            config.set(path + ".fromType", block.getType().toString());
+            config.set(path + ".toType", Material.AIR.toString());
+        }
         try {
             config.save(file);
         } catch (IOException e) {
