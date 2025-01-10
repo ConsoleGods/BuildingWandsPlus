@@ -1,8 +1,9 @@
 name: BuildingWandsPlus
-version: 2.0.1
+version: 2.0.2
 main: com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus
 api-version: 1.21.1
 author: OptimusPrimeRDC
+softdepend: [WorldGuard]
 commands:
   wands:
     description: Give a wand to a player, reload the plugin configuration, or undo the last operation
@@ -14,4 +15,7 @@ permissions:
     default: op
   buildingwandsplus.command.reload:
     description: Allows the player to reload the plugin configuration
+    default: op
+  buildingwandsplus.override:
+    description: Allows the player to bypass WorldGuard protection (WARNING!!!!!! This is dangerous)
     default: op

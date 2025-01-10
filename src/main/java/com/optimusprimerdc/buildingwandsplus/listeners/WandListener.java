@@ -1,6 +1,7 @@
 package com.optimusprimerdc.buildingwandsplus.listeners;
 
 import com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -27,6 +29,7 @@ import java.util.UUID;
 
 public class WandListener implements Listener {
     private final BuildingWandsPlus plugin;
+    private final WorldGuardListener worldGuardListener;
     private int maxBlockLimit;
     private Material wandItem;
     private final Map<UUID, LinkedList<List<Block>>> playerBlockHistory = new HashMap<>();
@@ -37,6 +40,7 @@ public class WandListener implements Listener {
 
     public WandListener(BuildingWandsPlus plugin) {
         this.plugin = plugin;
+        this.worldGuardListener = new WorldGuardListener(plugin);
         reloadConfig();
         playerHistoryFile = new File(plugin.getDataFolder(), "playerhistory.yml");
         undoHistoryFile = new File(plugin.getDataFolder(), "undohistory.yml");
@@ -67,31 +71,49 @@ public class WandListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        Location location = event.getBlock().getLocation();
+
+        if (worldGuardListener.isLocationProtected(location, player)) {
+            player.sendMessage(ChatColor.RED + "You cannot break blocks in a protected area!");
+            event.setCancelled(true);
+        }
+    }
+
     private void handleBlockPlacement(PlayerInteractEvent event, Player player, ItemStack item) {
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock != null) {
             Material blockType = clickedBlock.getType();
             BlockData blockData = clickedBlock.getBlockData();
             BlockFace face = event.getBlockFace(); // Get the clicked face
-    
+
             int length = Math.min(maxBlockLimit, 64); // Ensure the length does not exceed the max limit
-    
+
             // Build in the direction of the clicked face
             Block targetBlock = clickedBlock;
             List<Block> placedBlocks = new LinkedList<>();
             for (int i = 0; i < length; i++) {
                 targetBlock = targetBlock.getRelative(face); // Place in the direction of the clicked face
-    
+
                 if (!targetBlock.getType().isAir()) {
                     // Stop building if a block is already there
                     break;
                 }
-    
-                // ** Check if the block placement is directly towards the player **
+
+                // Check if the block placement is in a protected area
+                if (worldGuardListener.isLocationProtected(targetBlock.getLocation(), player)) {
+                    player.sendMessage(ChatColor.RED + "You cannot place blocks in a protected area!");
+                    event.setCancelled(true); // Cancel the event to prevent block placement
+                    return; // Exit the method to stop further processing
+                }
+
+                // Check if the block placement is directly towards the player
                 if (isPlayerTooClose(player, targetBlock)) {
                     break;
                 }
-    
+
                 // Place block based on game mode
                 if (player.getGameMode() == GameMode.CREATIVE) {
                     targetBlock.setType(blockType);
@@ -111,12 +133,11 @@ public class WandListener implements Listener {
             }
             if (!placedBlocks.isEmpty()) {
                 playerBlockHistory.computeIfAbsent(player.getUniqueId(), k -> new LinkedList<>()).addFirst(placedBlocks);
-                plugin.getLogger().info("Blocks placed by player " + player.getName() + ": " + placedBlocks.size());
                 logPlayerAction(player, placedBlocks, playerHistoryConfig, playerHistoryFile);
             }
         }
     }
-    
+
     /**
      * Check if the block being placed is too close to the player.
      *
@@ -127,7 +148,7 @@ public class WandListener implements Listener {
     private boolean isPlayerTooClose(Player player, Block targetBlock) {
         Location playerLocation = player.getLocation();
         Location blockLocation = targetBlock.getLocation();
-    
+
         // Check distance between player's position and block
         return blockLocation.distance(playerLocation) < 1.5; // Adjust distance as needed
     }
@@ -144,10 +165,8 @@ public class WandListener implements Listener {
                 block.setType(Material.AIR);
             }
             player.sendMessage("§6§lBuilding Wands: Last operation undone!");
-            plugin.getLogger().info("Undo operation performed by player " + player.getName());
         } else {
             player.sendMessage("§6§lBuilding Wands: No operation to undo!");
-            plugin.getLogger().info("No operation to undo for player " + player.getName());
         }
     }
 
@@ -223,7 +242,7 @@ public class WandListener implements Listener {
         double playerMaxY = player.getLocation().getY() + 1.8; // Height of a player
         double playerMinZ = player.getLocation().getZ() - 0.3;
         double playerMaxZ = player.getLocation().getZ() + 0.3;
-    
+
         // Target block's bounding box
         double blockMinX = targetBlock.getX();
         double blockMaxX = targetBlock.getX() + 1;
@@ -231,7 +250,7 @@ public class WandListener implements Listener {
         double blockMaxY = targetBlock.getY() + 1;
         double blockMinZ = targetBlock.getZ();
         double blockMaxZ = targetBlock.getZ() + 1;
-    
+
         // Check if the player's bounding box intersects with the target block's bounding box
         return playerMaxX > blockMinX && playerMinX < blockMaxX &&
                playerMaxY > blockMinY && playerMinY < blockMaxY &&

@@ -1,4 +1,5 @@
 /home/deck/VSCODE/OptimusPrimeRDC/BuildingWandsPlus/src/main/java/com/optimusprimerdc/buildingwandsplus/commands/WandCommand.java
 /home/deck/VSCODE/OptimusPrimeRDC/BuildingWandsPlus/src/main/java/com/optimusprimerdc/buildingwandsplus/commands/ReloadCommand.java
 /home/deck/VSCODE/OptimusPrimeRDC/BuildingWandsPlus/src/main/java/com/optimusprimerdc/buildingwandsplus/BuildingWandsPlus.java
+/home/deck/VSCODE/OptimusPrimeRDC/BuildingWandsPlus/src/main/java/com/optimusprimerdc/buildingwandsplus/listeners/WorldGuardListener.java
 /home/deck/VSCODE/OptimusPrimeRDC/BuildingWandsPlus/src/main/java/com/optimusprimerdc/buildingwandsplus/listeners/WandListener.java
