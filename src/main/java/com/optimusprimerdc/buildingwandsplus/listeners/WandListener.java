@@ -1,6 +1,8 @@
 package com.optimusprimerdc.buildingwandsplus.listeners;
 
 import com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus;
+import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
+import com.palmergames.bukkit.towny.object.TownyPermission;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -30,6 +32,7 @@ import java.util.UUID;
 public class WandListener implements Listener {
     private final BuildingWandsPlus plugin;
     private final WorldGuardListener worldGuardListener;
+    private final TownyListener townyListener;
     private int maxBlockLimit;
     private Material wandItem;
     private final Map<UUID, LinkedList<List<Block>>> playerBlockHistory = new HashMap<>();
@@ -41,6 +44,7 @@ public class WandListener implements Listener {
     public WandListener(BuildingWandsPlus plugin) {
         this.plugin = plugin;
         this.worldGuardListener = new WorldGuardListener(plugin);
+        this.townyListener = new TownyListener();
         reloadConfig();
         playerHistoryFile = new File(plugin.getDataFolder(), "playerhistory.yml");
         undoHistoryFile = new File(plugin.getDataFolder(), "undohistory.yml");
@@ -83,6 +87,11 @@ public class WandListener implements Listener {
     }
 
     private void handleBlockPlacement(PlayerInteractEvent event, Player player, ItemStack item) {
+        // Allow OP players and players with override permission to place blocks
+        if (player.isOp() || player.hasPermission("buildingwandsplus.override")) {
+            return; // OP players and players with override permission can place blocks
+        }
+
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock != null) {
             Material blockType = clickedBlock.getType();
@@ -102,9 +111,17 @@ public class WandListener implements Listener {
                     break;
                 }
 
-                // Check if the block placement is in a protected area
+                // Check if the block placement is in a protected area (WorldGuard)
                 if (worldGuardListener.isLocationProtected(targetBlock.getLocation(), player)) {
                     player.sendMessage(ChatColor.RED + "You cannot place blocks in a protected area!");
+                    event.setCancelled(true); // Cancel the event to prevent block placement
+                    return; // Exit the method to stop further processing
+                }
+
+                // Check if the block placement is in a protected area (Towny)
+                boolean canBuild = PlayerCacheUtil.getCachePermission(player, targetBlock.getLocation(), targetBlock.getType(), TownyPermission.ActionType.BUILD);
+                if (!canBuild) {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to build here!");
                     event.setCancelled(true); // Cancel the event to prevent block placement
                     return; // Exit the method to stop further processing
                 }

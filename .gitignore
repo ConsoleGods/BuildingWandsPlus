@@ -1,1 +1,8 @@
+# Local Server
 start.sh
+
+# Prevent Maven Leak
+/target
+
+# Others
+.vscode
