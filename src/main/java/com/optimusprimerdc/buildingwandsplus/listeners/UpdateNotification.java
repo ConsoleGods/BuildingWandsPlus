@@ -36,7 +36,7 @@ public class UpdateNotification {
             @Override
             public void run() {
                 try {
-                    String repo = "ConsoleGods/BuildingWandsPlus"; // Replace with your GitHub repository
+                    String repo = "OptimusPrimeRDC/BuildingWandsPlus"; // Replace with your GitHub repository
                     URL url = new URL("https://api.github.com/repos/" + repo + "/releases/latest");
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
@@ -80,7 +80,7 @@ public class UpdateNotification {
     public static void doUpdateNotification(Player player) {
         if (player.hasPermission("buildingwandsplus.admin") && hasUpdate) {
             player.sendMessage("§6[BuildingWandsPlus] §eA new update is available: " + latestVersion);
-            player.sendMessage("§6[BuildingWandsPlus] §eDownload it from: https://github.com/ConsoleGods/BuildingWandsPlus/releases/latest");
+            player.sendMessage("§6[BuildingWandsPlus] §eDownload it from: https://github.com/OptimusPrimeRDC/BuildingWandsPlus/releases/latest");
         }
     }
 }
