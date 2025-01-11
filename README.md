@@ -1,3 +1,5 @@
+# THIS PLUGIN IS STILL IN BETA. YOU HAVE BEEN WARNED!!!!!!
+
 # Building Wands Plus
 
 Building Wands Plus is a Minecraft plugin designed for version 1.21.1, utilizing the PaperMC, Bukkit, and Spigot APIs. This plugin allows players to create and manipulate structures in the game using wands.
@@ -16,7 +18,7 @@ Building Wands Plus is a Minecraft plugin designed for version 1.21.1, utilizing
 
 ## Usage
 
-- Use the `/wand` command to access the wand functionalities.
+- Use the `/wands` command to access the wand functionalities.
 - Follow the in-game instructions to utilize the features of the plugin.
 
 ## Author

@@ -2,27 +2,20 @@ package com.optimusprimerdc.buildingwandsplus.listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.json.JSONObject;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.logging.Logger;
 
-public class UpdateNotification {
+public class UpdateNotification implements Listener {
 
     private static final Logger LOGGER = Bukkit.getLogger();
     private static boolean hasUpdate;
@@ -81,6 +74,14 @@ public class UpdateNotification {
         if (player.hasPermission("buildingwandsplus.admin") && hasUpdate) {
             player.sendMessage("§6[BuildingWandsPlus] §eA new update is available: " + latestVersion);
             player.sendMessage("§6[BuildingWandsPlus] §eDownload it from: https://github.com/OptimusPrimeRDC/BuildingWandsPlus/releases/latest");
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        if (player.isOp()) {
+            doUpdateNotification(player);
         }
     }
 }
