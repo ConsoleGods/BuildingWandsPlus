@@ -48,6 +48,8 @@ public class UpdateNotification implements Listener {
                     latestVersion = json.get("tag_name").getAsString();
                     String currentVersion = plugin.getDescription().getVersion();
 
+                    LOGGER.info("Current version: " + currentVersion + ", Latest version: " + latestVersion);
+
                     if (!currentVersion.equalsIgnoreCase(latestVersion)) {
                         hasUpdate = true;
                         Bukkit.getScheduler().runTask(plugin, () -> {

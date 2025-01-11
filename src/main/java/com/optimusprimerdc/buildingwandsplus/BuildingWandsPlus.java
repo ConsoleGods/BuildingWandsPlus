@@ -1,8 +1,10 @@
 package com.optimusprimerdc.buildingwandsplus;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import com.optimusprimerdc.buildingwandsplus.commands.WandCommand;
 import com.optimusprimerdc.buildingwandsplus.listeners.WandListener;
+import com.optimusprimerdc.buildingwandsplus.listeners.UpdateNotification;
 
 public class BuildingWandsPlus extends JavaPlugin {
 
@@ -13,7 +15,11 @@ public class BuildingWandsPlus extends JavaPlugin {
         saveDefaultConfig(); // Ensure the config.yml is saved
         wandListener = new WandListener(this);
         getServer().getPluginManager().registerEvents(wandListener, this);
+        getServer().getPluginManager().registerEvents(new UpdateNotification(), this);
         this.getCommand("wands").setExecutor(new WandCommand(this));
+
+        // Check for updates
+        UpdateNotification.doUpdateCheck(this);
     }
 
     @Override

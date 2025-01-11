@@ -1,5 +1,5 @@
 name: BuildingWandsPlus
-version: 2.0.3
+version: 2.0.4
 main: com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus
 api-version: 1.21.1
 author: OptimusPrimeRDC
@@ -18,4 +18,7 @@ permissions:
     default: op
   buildingwandsplus.override:
     description: Allows the player to bypass WorldGuard protection (WARNING!!!!!! This is dangerous)
+    default: op
+  buildingwandsplus.command.admin:
+    description: Allows the player to get update notifications and download the latest version of the plugin
     default: op
