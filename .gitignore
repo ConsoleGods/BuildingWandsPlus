@@ -2,7 +2,7 @@
 start.sh
 
 # Prevent Maven Leak
-/target
+target/
 
 # Others
-.vscode
+.vscode/
