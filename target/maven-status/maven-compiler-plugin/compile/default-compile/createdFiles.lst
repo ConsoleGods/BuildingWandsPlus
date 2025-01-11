@@ -1,6 +1,8 @@
+com/optimusprimerdc/buildingwandsplus/listeners/UpdateNotification$1.class
 com/optimusprimerdc/buildingwandsplus/commands/WandCommand.class
 com/optimusprimerdc/buildingwandsplus/listeners/TownyListener.class
 com/optimusprimerdc/buildingwandsplus/BuildingWandsPlus.class
 com/optimusprimerdc/buildingwandsplus/listeners/WandListener.class
 com/optimusprimerdc/buildingwandsplus/listeners/WorldGuardListener.class
 com/optimusprimerdc/buildingwandsplus/commands/ReloadCommand.class
+com/optimusprimerdc/buildingwandsplus/listeners/UpdateNotification.class
