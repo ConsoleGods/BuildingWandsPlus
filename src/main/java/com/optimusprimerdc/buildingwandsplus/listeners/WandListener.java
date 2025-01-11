@@ -1,8 +1,6 @@
 package com.optimusprimerdc.buildingwandsplus.listeners;
 
 import com.optimusprimerdc.buildingwandsplus.BuildingWandsPlus;
-import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
-import com.palmergames.bukkit.towny.object.TownyPermission;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -119,8 +117,7 @@ public class WandListener implements Listener {
                 }
 
                 // Check if the block placement is in a protected area (Towny)
-                boolean canBuild = PlayerCacheUtil.getCachePermission(player, targetBlock.getLocation(), targetBlock.getType(), TownyPermission.ActionType.BUILD);
-                if (!canBuild) {
+                if (!townyListener.canBuild(player, targetBlock.getLocation())) {
                     player.sendMessage(ChatColor.RED + "You do not have permission to build here!");
                     event.setCancelled(true); // Cancel the event to prevent block placement
                     return; // Exit the method to stop further processing
@@ -251,6 +248,7 @@ public class WandListener implements Listener {
      * @param targetBlock The block being placed
      * @return True if the target block obstructs the player, false otherwise
      */
+    @SuppressWarnings("unused")
     private boolean isPlayerObstructed(Player player, Block targetBlock) {
         // Player's bounding box
         double playerMinX = player.getLocation().getX() - 0.3;

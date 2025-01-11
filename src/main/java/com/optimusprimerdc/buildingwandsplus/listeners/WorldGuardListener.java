@@ -7,45 +7,25 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.protection.flags.Flags;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 public class WorldGuardListener {
 
-    private final WorldGuardPlugin wgPlugin;
-
     public WorldGuardListener(Plugin plugin) {
-        this.wgPlugin = (WorldGuardPlugin) plugin.getServer().getPluginManager().getPlugin("WorldGuard");
+        // No need to store the plugin reference if it's not used
     }
 
     public boolean isLocationProtected(Location location, Player player) {
-        if (wgPlugin == null || !wgPlugin.isEnabled()) {
-            return false; // WorldGuard is not enabled
-        }
-
-        // Allow OP players and players with override permission to place blocks
-        if (player.isOp() || player.hasPermission("buildingwandsplus.override")) {
-            return false; // OP players and players with override permission can place blocks
-        }
-
-        // Get WorldGuard and the RegionManager for the current world
-        RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer()
-                .get(BukkitAdapter.adapt(location.getWorld()));
-
+        RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(location.getWorld()));
         if (regionManager == null) {
-            return false; // No regions in this world
+            return false;
         }
 
-        // Convert Bukkit Location to WorldEdit's BlockVector3
         BlockVector3 blockVector = BukkitAdapter.asBlockVector(location);
+        ApplicableRegionSet applicableRegionSet = regionManager.getApplicableRegions(blockVector);
 
-        // Get regions applicable to the location
-        ApplicableRegionSet regions = regionManager.getApplicableRegions(blockVector);
-
-        // Check if the player has permission in any of the regions
-        boolean canBuild = regions.testState(wgPlugin.wrapPlayer(player), Flags.BUILD);
-        return !canBuild; // Return true if the player cannot build (location is protected)
+        return !applicableRegionSet.testState(WorldGuardPlugin.inst().wrapPlayer(player), Flags.BUILD);
     }
 }

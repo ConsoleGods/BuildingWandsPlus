@@ -13,6 +13,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.logging.Logger;
 
@@ -31,7 +32,8 @@ public class UpdateNotification implements Listener {
             public void run() {
                 try {
                     String repo = "ConsoleGods/BuildingWandsPlus"; // Replace with your GitHub repository
-                    URL url = new URL("https://api.github.com/repos/" + repo + "/releases/latest");
+                    URI uri = new URI("https://api.github.com/repos/" + repo + "/releases/latest");
+                    URL url = uri.toURL();
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
