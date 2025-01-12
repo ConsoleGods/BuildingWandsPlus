@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class WandListener implements Listener {
     private final BuildingWandsPlus plugin;
@@ -38,6 +39,7 @@ public class WandListener implements Listener {
     private final File undoHistoryFile;
     private final FileConfiguration playerHistoryConfig;
     private final FileConfiguration undoHistoryConfig;
+    private static final Logger LOGGER = Logger.getLogger(WandListener.class.getName());
 
     public WandListener(BuildingWandsPlus plugin) {
         this.plugin = plugin;
@@ -248,7 +250,6 @@ public class WandListener implements Listener {
      * @param targetBlock The block being placed
      * @return True if the target block obstructs the player, false otherwise
      */
-    @SuppressWarnings("unused")
     private boolean isPlayerObstructed(Player player, Block targetBlock) {
         // Player's bounding box
         double playerMinX = player.getLocation().getX() - 0.3;
